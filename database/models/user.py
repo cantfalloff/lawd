@@ -6,10 +6,8 @@ from database.models.base import Base
 
 class User(Base):
     name: Mapped[str] = mapped_column(String(32))
-    email: Mapped[str] = mapped_column(unique=True)
-    password: Mapped[str] = mapped_column()
 
     tags = relationship('Tag')
     sessions = relationship('Session', back_populates='user')
 
-    telegram_id: Mapped[str] = mapped_column(nullable=True, index=True)
+    telegram_id: Mapped[int] = mapped_column(nullable=True, index=True)
