@@ -34,3 +34,17 @@ class Base(AsyncAttrs, DeclarativeBase):
         elem = elem.scalars().first()
 
         return elem
+    
+
+    @classmethod
+    async def all_where(cls, session: Session_dp, field, value):
+        '''
+        returns all objects by condition
+        '''
+
+        stmt = select(cls).where(field == value)
+        elem = await session.execute(stmt)
+
+        elem = elem.scalars().all()
+
+        return elem

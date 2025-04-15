@@ -45,8 +45,7 @@ async def get_name(message: Message, state: FSMContext):
         user = await User.get(session=session, field=User.name, value=username)
 
         if user:
-            await state.clear()
-            return await message.answer('but user with such username already exists. please choose another one')
+            return await message.answer('user with such username already exists. please choose another one')
 
     await state.update_data(username=username)
     await state.set_state(AuthStates.password)

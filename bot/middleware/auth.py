@@ -2,6 +2,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message
 from aiogram.filters import Command
 from typing import Callable, Dict, Any, Awaitable
+from aiogram.fsm.context import FSMContext
 
 from database.db import db_manager
 from database.models import User
@@ -18,7 +19,8 @@ class AuthMiddleware(BaseMiddleware):
         event: Message,
         data: Dict[str, Any]
     ) -> Any:
-
+        
+        state: FSMContext = data.get('state')
         user_tg_id = event.from_user.id
 
         async with db_manager.session() as session:
@@ -26,5 +28,7 @@ class AuthMiddleware(BaseMiddleware):
             
             if not user:
                 return event.answer('you are not authenticated. enter /signup to create a new account')
-    
-        return await handler(event, data)
+            
+            await state.update_data(user=user)
+
+            return await handler(event, data)    
