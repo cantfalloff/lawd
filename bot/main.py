@@ -5,7 +5,7 @@ from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from .config import telegram_bot_token
-from .routers import std_r, signup_r, tags_r
+from .routers import std_r, signup_r, tags_r, sessions_r
 from .middleware import AuthMiddleware
 
 
@@ -15,17 +15,20 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(std_r)
 dp.include_router(signup_r)
 dp.include_router(tags_r)
+dp.include_router(sessions_r)
 
 # include AuthMiddleware
 
 std_r.message.middleware(AuthMiddleware())
 tags_r.message.middleware(AuthMiddleware())
+sessions_r.message.middleware(AuthMiddleware())
 
 
 commands = [
-    BotCommand(command='start', description='start bot'),
+    BotCommand(command='ss', description='start session'),
     BotCommand(command='signup', description='create a new account'),
-    BotCommand(command='add_tag', description='create a new tag')
+    BotCommand(command='addtag', description='create a new tag'),
+    BotCommand(command='mytags', description='see all of my tags')
 ]
 
 
