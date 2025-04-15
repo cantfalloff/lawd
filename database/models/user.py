@@ -5,7 +5,8 @@ from database.models.base import Base
 
 
 class User(Base):
-    name: Mapped[str] = mapped_column(String(32))
+    name: Mapped[str] = mapped_column(String(32), unique=True)
+    password: Mapped[str] = mapped_column()
 
     tags = relationship('Tag')
     sessions = relationship('Session', back_populates='user')
