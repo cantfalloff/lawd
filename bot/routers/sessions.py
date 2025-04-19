@@ -102,7 +102,7 @@ async def finish_the_session(callback: CallbackQuery, state: FSMContext):
         )
 
     await state.clear()
-    await callback.answer('session finished')
+    await callback.answer('the session has ended!')
 
     total_time = work_session.total_time
     hours = total_time // 3600

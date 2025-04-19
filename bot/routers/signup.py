@@ -2,6 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from pydantic import ValidationError
 
 from bot.states import AuthStates
 from bot.utils import password_manager
@@ -41,6 +42,12 @@ async def get_name(message: Message, state: FSMContext):
         if username == '0':
             username = message.from_user.username
 
+    if not username.replace(' ', '').isalpha():
+        return await message.answer('username can only contain letters and spaces')
+        
+    if not (4 <= len(username) <= 32):
+        return await message.answer('username length should be longer or equal to 4 symbols and shorter or equal to 32 symbols')
+
     async with db_manager.session() as session:
         user = await User.get(session=session, field=User.name, value=username)
 
@@ -49,7 +56,7 @@ async def get_name(message: Message, state: FSMContext):
 
     await state.update_data(username=username)
     await state.set_state(AuthStates.password)
-    await message.answer('now, enter your password:')
+    await message.answer('now, enter your password. there are no restrictions on the password, but make sure it is secure')
 
 
 @signup_r.message(AuthStates.password)
@@ -60,8 +67,9 @@ async def get_password(message: Message, state: FSMContext):
     await message.delete()
 
     data = await state.get_data()
-    username = data['username']
+    username: str = data['username']
     password = data['password']
+    telegram_id = message.from_user.id
 
     try:
         password = password_manager.hash_password(password)
@@ -69,7 +77,7 @@ async def get_password(message: Message, state: FSMContext):
         print(er.name)
 
     async with db_manager.session() as session:
-        await User.create(session=session, name=username, password=password, telegram_id=message.from_user.id)
+        await User.create(session=session, name=username, password=password, telegram_id=telegram_id)
 
     await message.answer('successfully signed up!')
     await state.clear()

@@ -12,11 +12,9 @@ tags_r = Router()
 
 
 @tags_r.message(Command('my_tags', 'mytags'))
-async def add_tag(message: Message, state: FSMContext):
+async def my_tags(message: Message, state: FSMContext):
     data = await state.get_data()
     user: User = data.get('user')
-
-    # tags = user.tags
 
     async with db_manager.session() as session:
         tags = await Tag.all_where(session=session, field=Tag.user_id, value=user.id)
@@ -38,6 +36,9 @@ async def add_tag(message: Message, state: FSMContext):
 async def get_title(message: Message, state: FSMContext):
     title = message.text
 
+    if not (len(title) <= 64):
+        return await message.answer('title length should be less or equal to 64 symbols')
+
     await state.update_data(title=title)
     await state.set_state(TagsCreationStates.icon)
     await message.answer('enter icon for your tag, just for better view (type "0" if you do not want to add icon): ')
@@ -46,6 +47,9 @@ async def get_title(message: Message, state: FSMContext):
 @tags_r.message(TagsCreationStates.icon)
 async def get_icon(message: Message, state: FSMContext):
     icon = message.text
+
+    if not (len(icon) <= 5):
+        return await message.answer('icon length should be less or equal to 5')
 
     data = await state.get_data()
     title = data.get('title')
