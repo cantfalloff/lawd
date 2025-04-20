@@ -38,7 +38,7 @@ async def inline_tags(user: User):
     for t in tags:
         keyboard.add(InlineKeyboardButton(text=t.title + t.icon, callback_data=f'tag:{t.title}:{user.id}'))
 
-    return keyboard.adjust(2).as_markup() if len(tags) > 0 else None
+    return keyboard.adjust(1).as_markup() if len(tags) > 0 else None
 
 
 @sessions_r.message(Command('ss'))
@@ -80,7 +80,7 @@ async def session(callback: CallbackQuery, state: FSMContext):
 @sessions_r.callback_query(F.data == 'sk:finish_the_session')
 async def finish_the_session(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    start_time = data.get('start_time')
+    start_time: datetime = data.get('start_time')
     end_time = datetime.now()
     tag: Tag = data.get('tag')
     tag_id = tag.id
@@ -104,6 +104,7 @@ async def finish_the_session(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer('the session has ended!')
 
+    # work time info
     total_time = work_session.total_time
     hours = total_time // 3600
     total_time -= hours*3600
@@ -111,7 +112,41 @@ async def finish_the_session(callback: CallbackQuery, state: FSMContext):
     total_time -= minutes * 60
     seconds = total_time
 
-    await callback.message.answer(f'session finished! you worked for <b>{hours}h {minutes}m {seconds}s</b>', parse_mode='HTML')
+    work_info = f'you did <b>{tag.title}{tag.icon}</b> for '
+
+    if hours != 0:
+        work_info += f'<b>{hours}h</b>'
+
+    if minutes != 0:
+        work_info += f'<b>{minutes}m</b>'
+    
+    work_info += f'<b>{seconds}s</b>'
+
+    # breaks time
+    breaks = work_session.breaks
+    bhours = breaks // 3600
+    breaks -= bhours*3600
+    bminutes = breaks // 60
+    breaks -= bminutes * 60
+    bseconds = breaks
+
+    rest_info = f'you rested for '
+
+    if breaks == 0:
+        rest_info = 'you didn\'t rest during this session💪'
+    else:
+        if bhours != 0:
+            rest_info += f'<b>{bhours}h</b>'
+
+        if bminutes != 0:
+            rest_info += f'<b>{bminutes}m</b>'
+        
+        rest_info += f'<b>{bseconds}s</b>'
+
+    start_time_info = f'start time: {start_time.year}-{start_time.month}-{start_time.day} {start_time.hour}:{start_time.minute}:{start_time.second}'
+    end_time_info = f'end time: {end_time.year}-{end_time.month}-{end_time.day} {end_time.hour}:{end_time.minute}:{end_time.second}'
+
+    await callback.message.edit_text(f'the session has ended!\n\n{work_info}\n{rest_info}\n\n{start_time_info}\n{end_time_info}', parse_mode='HTML')
 
 
 @sessions_r.callback_query(F.data == 'sk:make_a_break')

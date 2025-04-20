@@ -5,21 +5,19 @@ from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from .config import telegram_bot_token
-from .routers import std_r, signup_r, tags_r, sessions_r
+from .routers import std_r, signup_r, tags_r, sessions_r, std_requiredauth_r
 from .middleware import AuthMiddleware
 
 
 bot = Bot(token=telegram_bot_token)
 dp = Dispatcher(storage=MemoryStorage())
 
-dp.include_router(std_r)
-dp.include_router(signup_r)
-dp.include_router(tags_r)
-dp.include_router(sessions_r)
+
+dp.include_routers(std_r, std_requiredauth_r, signup_r, tags_r, sessions_r)
 
 # include AuthMiddleware
 
-std_r.message.middleware(AuthMiddleware())
+std_requiredauth_r.message.middleware(AuthMiddleware())
 tags_r.message.middleware(AuthMiddleware())
 sessions_r.message.middleware(AuthMiddleware())
 
