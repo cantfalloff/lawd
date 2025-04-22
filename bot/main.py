@@ -20,6 +20,7 @@ dp.include_routers(std_r, std_requiredauth_r, signup_r, tags_r, sessions_r)
 std_requiredauth_r.message.middleware(AuthMiddleware())
 tags_r.message.middleware(AuthMiddleware())
 sessions_r.message.middleware(AuthMiddleware())
+sessions_r.callback_query.middleware(AuthMiddleware())
 
 
 commands = [

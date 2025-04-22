@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from time import sleep
 
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
@@ -9,22 +8,13 @@ from aiogram.fsm.context import FSMContext
 
 from sqlalchemy import select
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database import db_manager, Tag, User, Session
 
-
-session_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='make a break', callback_data='sk:make_a_break')],
-    [InlineKeyboardButton(text='finish the session', callback_data='sk:finish_the_session')]
-])
-
-
-break_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='continue', callback_data='bk:continue')],
-    [InlineKeyboardButton(text='finish the session', callback_data='sk:finish_the_session')]
-])
+from bot.views import is_active_session
+from bot.keyboards import session_keyboard, break_keyboard
 
 
 sessions_r = Router()
@@ -48,6 +38,9 @@ async def start_session(message: Message, state: FSMContext):
 
     await state.update_data(user=user)
 
+    if await is_active_session(user_id=user.id):
+        return await message.answer('you already started a session')
+
     keyboard = await inline_tags(user=user)
 
     if keyboard is None:
@@ -62,6 +55,11 @@ async def session(callback: CallbackQuery, state: FSMContext):
     user_id = uuid.UUID(callback.data.split(':')[2])
     start_time = datetime.now()
 
+    # check for existing sessions
+
+    if await is_active_session(user_id=user_id):
+        return await callback.message.edit_text('you already started a session')
+
     await state.update_data(start_time=start_time)
 
     async with db_manager.session() as session:
@@ -69,6 +67,18 @@ async def session(callback: CallbackQuery, state: FSMContext):
         query = await session.execute(stmt)
         tag = query.scalars().first()
         await state.update_data(tag=tag)
+
+        # register new session
+        work_session = await Session.create(
+            session=session, 
+            start=start_time, 
+            end=start_time, # end time = start time, because it cannot be None. it is just a temporary value
+            breaks=0,
+            description='', 
+            tag_id=tag.id,
+            user_id=user_id,
+            is_active=True
+        )
 
         await callback.message.edit_text(f'''
             \n{tag.title}{tag.icon}\nstart time: {start_time.year}-{start_time.month}-{start_time.day} {start_time.hour}:{start_time.minute}:{start_time.second}''', 
@@ -80,26 +90,25 @@ async def session(callback: CallbackQuery, state: FSMContext):
 @sessions_r.callback_query(F.data == 'sk:finish_the_session')
 async def finish_the_session(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    start_time: datetime = data.get('start_time')
-    end_time = datetime.now()
-    tag: Tag = data.get('tag')
-    tag_id = tag.id
     user: User = data.get('user')
-    user_id = user.id
+    end_time = datetime.now()
     breaks: int = data.get('break_seconds')
 
-    async with db_manager.session() as session:
-        work_session = await Session.create(
-            session=session, 
-            start=start_time, 
-            end=end_time,
-            breaks=breaks, 
-            description='', 
-            tag_id=tag_id,
-            # tag=tag,
-            # user=user,
-            user_id=user_id
-        )
+    async with db_manager.session() as _db_session:
+
+        stmt = select(Session).where(Session.user_id==user.id).where(Session.is_active==True)
+        query = await _db_session.execute(stmt)
+        work_session = query.scalars().first()
+
+        tag: Tag = await Tag.get(session=_db_session, field=Tag.id, value=work_session.tag_id)
+        start_time: datetime = work_session.start
+
+        # updating data
+        work_session.end = end_time
+        work_session.breaks = breaks if breaks else 0
+        work_session.is_active = False
+
+        await _db_session.commit()
 
     await state.clear()
     await callback.answer('the session has ended!')
@@ -115,10 +124,10 @@ async def finish_the_session(callback: CallbackQuery, state: FSMContext):
     work_info = f'you did <b>{tag.title}{tag.icon}</b> for '
 
     if hours != 0:
-        work_info += f'<b>{hours}h</b>'
+        work_info += f'<b>{hours}h</b> '
 
     if minutes != 0:
-        work_info += f'<b>{minutes}m</b>'
+        work_info += f'<b>{minutes}m</b> '
     
     work_info += f'<b>{seconds}s</b>'
 
@@ -136,10 +145,10 @@ async def finish_the_session(callback: CallbackQuery, state: FSMContext):
         rest_info = 'you didn\'t rest during this session💪'
     else:
         if bhours != 0:
-            rest_info += f'<b>{bhours}h</b>'
+            rest_info += f'<b>{bhours}h</b> '
 
         if bminutes != 0:
-            rest_info += f'<b>{bminutes}m</b>'
+            rest_info += f'<b>{bminutes}m </b>'
         
         rest_info += f'<b>{bseconds}s</b>'
 
@@ -160,6 +169,7 @@ async def make_a_break(callback: CallbackQuery, state: FSMContext):
 @sessions_r.callback_query(F.data == 'bk:continue')
 async def continue_session(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
+    user: User = data.get('user')
 
     start_time: datetime = data.get('start_time')
     break_start: datetime = data.get('break_start')
@@ -171,9 +181,15 @@ async def continue_session(callback: CallbackQuery, state: FSMContext):
     break_seconds = (datetime.now() - break_start).seconds + break_seconds_1
 
     await state.update_data(break_seconds=break_seconds)
-    tag: Tag = data.get('tag')
+
+    async with db_manager.session() as _db_session:
+        stmt = select(Session).where(Session.user_id==user.id).where(Session.is_active==True)
+        query = await _db_session.execute(stmt)
+        work_session = query.scalars().first()
+
+        tag: Tag = await Tag.get(session=_db_session, field=Tag.id, value=work_session.tag_id)
+        start_time: datetime = work_session.start
 
     await callback.message.edit_text(f'''
             \n{tag.title}{tag.icon}\nstart time: {start_time.year}-{start_time.month}-{start_time.day} {start_time.hour}:{start_time.minute}:{start_time.second}''', 
         parse_mode='HTML', reply_markup=session_keyboard)
-    
