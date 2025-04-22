@@ -12,6 +12,7 @@ class Session(Base):
     end: Mapped[datetime] = mapped_column(DateTime)
     breaks: Mapped[int] = mapped_column(default=0)
     description: Mapped[str] = mapped_column()
+    is_active: Mapped[bool] = mapped_column(default=False)
 
     tag_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('tags.id'))
     tag = relationship('Tag')
