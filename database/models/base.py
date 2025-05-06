@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy import select
 
 from database.db import Session_dp
+from common import db_logger
 
 
 class Base(AsyncAttrs, DeclarativeBase):
