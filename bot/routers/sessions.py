@@ -69,7 +69,10 @@ async def session(callback: CallbackQuery, state: FSMContext):
         tag = query.scalars().first()
         await state.update_data(tag=tag)
 
+
         user = await User.get(session=session, field=User.id, value=user_id)
+
+
 
         # register new session
         work_session = await Session.create(
@@ -202,5 +205,6 @@ async def continue_session(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(f'''
             \n{tag.title}{tag.icon}\nstart time: {start_time.year}-{start_time.month}-{start_time.day} {start_time.hour}:{start_time.minute}:{start_time.second}''', 
         parse_mode='HTML', reply_markup=session_keyboard)
+
 
     bot_logger.info(ShortMessages.CTS)
