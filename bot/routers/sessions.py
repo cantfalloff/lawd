@@ -15,6 +15,7 @@ from database import db_manager, Tag, User, Session
 
 from bot.views import is_active_session
 from bot.keyboards import session_keyboard, break_keyboard
+from common import bot_logger, ShortMessages
 
 
 sessions_r = Router()
@@ -68,6 +69,8 @@ async def session(callback: CallbackQuery, state: FSMContext):
         tag = query.scalars().first()
         await state.update_data(tag=tag)
 
+        user = await User.get(session=session, field=User.id, value=user_id)
+
         # register new session
         work_session = await Session.create(
             session=session, 
@@ -83,6 +86,8 @@ async def session(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(f'''
             \n{tag.title}{tag.icon}\nstart time: {start_time.year}-{start_time.month}-{start_time.day} {start_time.hour}:{start_time.minute}:{start_time.second}''', 
         parse_mode='HTML', reply_markup=session_keyboard)
+
+        bot_logger.info(ShortMessages.SAS)
     
     await callback.answer(f'you choose {tag_title}')
 
@@ -156,14 +161,18 @@ async def finish_the_session(callback: CallbackQuery, state: FSMContext):
     end_time_info = f'end time: {end_time.year}-{end_time.month}-{end_time.day} {end_time.hour}:{end_time.minute}:{end_time.second}'
 
     await callback.message.edit_text(f'the session has ended!\n\n{work_info}\n{rest_info}\n\n{start_time_info}\n{end_time_info}', parse_mode='HTML')
+    bot_logger.info(ShortMessages.FTS)
 
 
 @sessions_r.callback_query(F.data == 'sk:make_a_break')
 async def make_a_break(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    user: User = data.get('user')
 
     await callback.message.edit_text('session is on break😴', reply_markup=break_keyboard)
 
     await state.update_data(break_start=datetime.now())
+    bot_logger.info(ShortMessages.PTS)
 
 
 @sessions_r.callback_query(F.data == 'bk:continue')
@@ -193,3 +202,5 @@ async def continue_session(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(f'''
             \n{tag.title}{tag.icon}\nstart time: {start_time.year}-{start_time.month}-{start_time.day} {start_time.hour}:{start_time.minute}:{start_time.second}''', 
         parse_mode='HTML', reply_markup=session_keyboard)
+
+    bot_logger.info(ShortMessages.CTS)

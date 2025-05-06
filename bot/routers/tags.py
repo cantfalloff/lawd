@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 from bot.states import TagsCreationStates
 from database import User, Tag, db_manager
+from common import bot_logger, ShortMessages
 
 
 tags_r = Router()
@@ -30,6 +31,8 @@ async def add_tag(message: Message, state: FSMContext):
     await state.set_state(TagsCreationStates.title)
     await state.update_data(user=user)
     await message.answer('enter title for your tag: ')
+
+    bot_logger.info(ShortMessages.CNT)
 
 
 @tags_r.message(TagsCreationStates.title)

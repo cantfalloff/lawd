@@ -8,6 +8,7 @@ from bot.states import AuthStates
 from bot.utils import password_manager
 
 from database import db_manager, User
+from common import ShortMessages, bot_logger
 
 
 signup_r = Router()
@@ -81,3 +82,5 @@ async def get_password(message: Message, state: FSMContext):
 
     await message.answer('successfully signed up!')
     await state.clear()
+
+    bot_logger.info(ShortMessages.USU)
