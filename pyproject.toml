@@ -1,6 +1,6 @@
 [project]
 name = "thatrack"
-version = "0.1.0"
+version = "1.0.0"
 description = "an application for tracking study and work time"
 authors = [
     {name = "thediogen",email = "evgendvodnenko@gmail.com"}
