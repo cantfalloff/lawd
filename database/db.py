@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from fastapi import Depends
 
+from common import db_logger
+
 
 class DatabaseManager:
 
@@ -19,19 +21,30 @@ class DatabaseManager:
 
 
     def init(self, host: str, echo: bool = False):
-        self._engine = create_async_engine(host, echo=echo)
-        self._sessionmaker = async_sessionmaker(
-            autocommit=False,
-            expire_on_commit=False,
-            bind=self._engine
-        )
+        try:
+            self._engine = create_async_engine(host, echo=echo)
+            self._sessionmaker = async_sessionmaker(
+                autocommit=False,
+                expire_on_commit=False,
+                bind=self._engine
+            )
+
+            db_logger.info('initialized')
+
+        except Exception as _:
+            db_logger.error('exception', exc_info=True)
 
 
     async def close(self):
-        await self._engine.dispose()
+        try:
+            await self._engine.dispose()
 
-        self._engine = None
-        self._sessionmaker = None
+            self._engine = None
+            self._sessionmaker = None
+
+            db_logger.info('closed')
+        except Exception as _:
+            db_logger.error('exception', exc_info=True)
 
 
     @contextlib.asynccontextmanager
@@ -41,6 +54,7 @@ class DatabaseManager:
                 yield connection
             except Exception:
                 await connection.rollback()
+                db_logger.error('exception', exc_info=True)
                 raise
 
 
@@ -52,6 +66,7 @@ class DatabaseManager:
             yield session
         except Exception:
             await session.rollback()
+            db_logger.critical('exception', exc_info=True)
             raise
         finally:
             await session.close()
@@ -62,6 +77,7 @@ db_manager = DatabaseManager()
 
 async def get_db_session():
     async with db_manager.session() as session:
+        db_logger.info('yield session')
         yield session
 
 

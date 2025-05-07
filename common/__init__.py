@@ -6,4 +6,4 @@ for instance: logger or different managers
 '''
 
 
-from .logger import db_logger, bot_logger, ShortMessages
+from .logger import db_logger
