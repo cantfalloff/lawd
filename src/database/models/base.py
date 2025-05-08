@@ -4,8 +4,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy import select
 
-from database.db import Session_dp
-from common import db_logger
+from src.database.db import Session_dp
+from src.common import db_logger
 
 
 class Base(AsyncAttrs, DeclarativeBase):

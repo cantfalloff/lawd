@@ -2,7 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import BIGINT
 
-from database.models.base import Base
+from src.database.models.base import Base
 
 
 class User(Base):

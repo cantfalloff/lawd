@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from fastapi import Depends
 
-from common import db_logger
+from src.common import db_logger
 
 
 class DatabaseManager:
@@ -29,10 +29,10 @@ class DatabaseManager:
                 bind=self._engine
             )
 
-            db_logger.info('initialized')
+            db_logger.info('database initialized')
 
         except Exception as _:
-            db_logger.error('exception', exc_info=True)
+            db_logger.error('database error', exc_info=True)
 
 
     async def close(self):
@@ -44,7 +44,7 @@ class DatabaseManager:
 
             db_logger.info('closed')
         except Exception as _:
-            db_logger.error('exception', exc_info=True)
+            db_logger.error('database error', exc_info=True)
 
 
     @contextlib.asynccontextmanager
@@ -54,7 +54,7 @@ class DatabaseManager:
                 yield connection
             except Exception:
                 await connection.rollback()
-                db_logger.error('exception', exc_info=True)
+                db_logger.error('database error', exc_info=True)
                 raise
 
 
