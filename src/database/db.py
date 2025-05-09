@@ -42,7 +42,7 @@ class DatabaseManager:
             self._engine = None
             self._sessionmaker = None
 
-            db_logger.info('closed')
+            db_logger.info('database closed')
         except Exception as _:
             db_logger.error('database error', exc_info=True)
 

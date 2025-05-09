@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from src.config import DATABASE_URL
 from src.common import api_logger
 from src.database import db_manager
-from .dependencies import api_key_dp
+from .routers import routers
 
 
 @asynccontextmanager
@@ -20,6 +20,12 @@ async def api_lifespan(app: FastAPI):
 app = FastAPI(
     title='thatrack',
     description='an application for tracking study and work time',
-    dependencies=[api_key_dp],
-    lifespan=api_lifespan
+    lifespan=api_lifespan,
 )
+
+
+if len(routers) > 0:
+    for r in routers:
+        app.include_router(r)
+else:
+    api_logger.warning('No routers provided')
