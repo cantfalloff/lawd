@@ -5,6 +5,7 @@ from src.common import api_logger
 from src.database import Session_dp, User
 from src.api.dependencies import api_key_dp
 from src.schemas import UserSchema
+from src.cache.redis_manager import redis_manager
 
 
 auth_r = APIRouter(prefix='/auth', dependencies=[api_key_dp])
@@ -29,6 +30,9 @@ async def signup(request: Request, session: Session_dp, user_data: UserSchema):
         password=user_data.password, # it arrives already hashed, so i do not do it here
         telegram_id=user_data.telegram_id
     )
+
+    # add new user to cache to mark them as registrated
+    await redis_manager.rpush(f'{user_data.telegram_id}', f'{user_data.name}', f'{user_data.telegram_id}')
 
     api_logger.info(f'New user signed up: {user_data.name}')
 

@@ -33,3 +33,8 @@ DATABASE_URL: str = 'postgresql+asyncpg://{database_user}:{database_password}@{d
 )
 
 API_KEY = getenv_('api_key')
+
+# Redis
+REDIS_HOST: str = getenv_('redis_host')
+REDIS_PORT: int = int(getenv_('redis_port'))
+REDIS_DB: int = int(getenv_('redis_db'))
