@@ -31,8 +31,12 @@ async def signup(request: Request, session: Session_dp, user_data: UserSchema):
         telegram_id=user_data.telegram_id
     )
 
-    # add new user to cache to mark them as registrated
-    await redis_manager.rpush(f'{user_data.telegram_id}', f'{user_data.name}', f'{user_data.telegram_id}')
+    # add new user to cache (in Redis) to mark them as registrated
+    async with redis_manager.pipeline(transaction=True) as pipe:
+        await pipe.rpush('users', f'{user_data.telegram_id}')
+        await pipe.hset(f'{user_data.telegram_id}', key='name', value=user_data.name)
+
+        await pipe.execute()
 
     api_logger.info(f'New user signed up: {user_data.name}')
 
