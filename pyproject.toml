@@ -1,9 +1,9 @@
 [project]
-name = "thatrack"
+name = "lawd"
 version = "1.0.0"
 description = "an application for tracking study and work time"
 authors = [
-    {name = "thediogen",email = "evgendvodnenko@gmail.com"}
+    {name = "thekovalskii",email = "thekovalskii@gmail.com"}
 ]
 readme = "README.md"
 requires-python = "^3.10"

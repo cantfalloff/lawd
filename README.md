@@ -1,6 +1,6 @@
-# thatrack ⌛️
+# lawd ⌛️
 
-thatrack is an application for tracking study and work time
+lawd is an application for tracking study and work time
 * api
 * telegram bot
 * database

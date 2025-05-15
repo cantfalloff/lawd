@@ -18,7 +18,7 @@ async def api_lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title='thatrack',
+    title='lawd',
     description='an application for tracking study and work time',
     lifespan=api_lifespan,
 )
